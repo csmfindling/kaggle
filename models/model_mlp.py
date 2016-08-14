@@ -17,15 +17,15 @@ class MAPECost(Cost):
 
 def build_mlp(features, labels):
 
-    mlp  = MLP(activations=[Rectifier(), Rectifier(), None], dims=[233, 800, 800, 1], weights_init=IsotropicGaussian(), biases_init=Constant(1))
+    mlp  = MLP(activations=[Rectifier(), Rectifier(), None], dims=[233, 800, 1000, 1], weights_init=IsotropicGaussian(), biases_init=Constant(1))
     mlp.initialize()
 
     prediction = mlp.apply(features)
     cost       = MAPECost().apply(prediction, labels)
 
     cg            = ComputationGraph(cost)
-    cg_dropout0   = apply_dropout(cg, [VariableFilter(roles=[INPUT])(cg.variables)[1]], .2)
-    cg_dropout1   = apply_dropout(cg_dropout0, [VariableFilter(roles=[OUTPUT])(cg_dropout0.variables)[1], VariableFilter(roles=[OUTPUT])(cg_dropout0.variables)[3]], .5)
+    #cg_dropout0   = apply_dropout(cg, [VariableFilter(roles=[INPUT])(cg.variables)[1]], .2)
+    cg_dropout1   = apply_dropout(cg, [VariableFilter(roles=[OUTPUT])(cg.variables)[1], VariableFilter(roles=[OUTPUT])(cg.variables)[3]], .2)
     cost_dropout1 = cg_dropout1.outputs[0]
 
     return cost_dropout1, cg_dropout1.parameters, cost
