@@ -23,14 +23,14 @@ from fuel.datasets.hdf5 import H5PYDataset
 train_set = H5PYDataset(
     '../data/data.hdf5',
     which_sets=('train',),
-    subset=slice(0, 100), #
+    subset=slice(0, 290000), #
     load_in_memory=True
 )
 
 valid_set = H5PYDataset(
     '../data/data.hdf5',
     which_sets=('validation',),
-    subset=slice(0, 10), #
+    subset=slice(0, 9081), #
     load_in_memory=True
 )
 
