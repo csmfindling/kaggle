@@ -10,8 +10,8 @@ import pickle
 [X_train, y_train, X_val, y_val] = pickle.load(open('../../data/train.pkl','rb'))
 
 # parameters for dividing the training set
-n_examples_train = X_train.shape[0]
-n_examples_val   = X_val.shape[0]
+n_examples_train = X_train.shape[0] # 289111
+n_examples_val   = X_val.shape[0] # 9970
 n_total          = n_examples_train + n_examples_val
 n_features       = X_train.shape[1]
 
