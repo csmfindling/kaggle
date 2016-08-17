@@ -1,17 +1,11 @@
-from theano import tensor
+from theano import tensor, shared, config
 
 # choose model
-from models.gated import build_mlp
+from models.simple_mlp import build_mlp
 from blocks.algorithms import GradientDescent, Adam
 from blocks.model import Model
+import numpy
 
-
-# load model
-features_cat = tensor.dmatrix('features_cat')
-features_int = tensor.dmatrix('features_num')
-labels = tensor.dmatrix('labels')
-cost, params, valid_cost = build_mlp(features_cat, features_int, labels)
-model = Model(cost)
 
 # load data
 from fuel.streams import DataStream
@@ -27,8 +21,8 @@ train_set = H5PYDataset(
 
 valid_set = H5PYDataset(
     './data/data.hdf5',
-    which_sets=('validation',),
-    subset=slice(0, 9081), #
+    which_sets=('train',),
+    subset=slice(290000, 300000), #
     load_in_memory=True
 )
 
@@ -44,6 +38,39 @@ valid_stream = DataStream.default_stream(
     iteration_scheme=ShuffledScheme(valid_set.num_examples, batch_size=1000)
 )
 
+# compute mean target values
+print('Computing mean target values')
+cps = []
+primes = []
+cp_index = train_set.provides_sources.index('codepostal')
+prime_index = train_set.provides_sources.index('labels')
+
+for d in train_stream.get_epoch_iterator():
+    cps.append(d[cp_index])
+    primes.append(d[prime_index])
+
+cps = numpy.array(cps).flatten()
+primes = numpy.array(primes).flatten()
+
+means = []
+freqs = []
+s = 0
+for cp in range(23712):
+    freqs.append((cps==cp).sum())
+    means.append(primes[cps==cp].mean()) 
+means = numpy.array(means).astype(config.floatX)
+means = shared(value=means)
+
+# load model
+features_car_cat = tensor.dmatrix('features_car_cat')
+features_car_int = tensor.dmatrix('features_car_int')
+features_nocar_cat = tensor.dmatrix('features_nocar_cat')
+features_nocar_int = tensor.dmatrix('features_nocar_int')
+features_cp = tensor.imatrix('codepostal')
+labels = tensor.dmatrix('labels')
+cost, params, valid_cost = build_mlp(features_car_cat, features_car_int, features_nocar_cat, features_nocar_int,
+                                     features_cp, means, labels)
+model = Model(cost)
 
 # load algorithm
 from blocks.algorithms import Adam
@@ -91,8 +118,3 @@ main_loop = MainLoop(model=model, data_stream=train_stream, algorithm=algorithm,
 
 
 main_loop.run()
-
-
-
-
-
