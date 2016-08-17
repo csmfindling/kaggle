@@ -1,192 +1,156 @@
-########################
-#     make features    #
-########################
-
-import csv
-import numpy as np
-
-
-input_file = csv.DictReader(open("../data/ech_apprentissage.csv"), delimiter=';')
-
-lists_elements_categories = {}
-#list_strings = ['energie_veh', 'marque', 'profession', 'var14', 'var6', 'var8', 'codepostal']
-list_categorical = ['energie_veh', 'marque', 'profession', 'var2', 'var3', 'var4', 'var5', 'var6', 'var8', 'var13', 'var14', 'var15', 'var16', 'var17', 'var19', 'var20', 'var21', 'var22']
-for cat in list_categorical:
-	lists_elements_categories[cat] = []
-
-nb_of_training  = 0
-nb_of_errors    = 0
-features_errors_0  = []
-features_errors_NR = []
-for row in input_file:
-	for k in row.keys():
-		boolean = False
-		if ((row[k] == '') or (row[k] == 'NR')):
-			if (k not in features_errors_0) and (row[k] == ''):
-				features_errors_0.append(k)
-			if (k not in features_errors_NR) and (row[k] == 'NR'):
-				features_errors_NR.append(k)
-			nb_of_errors += 1
-			boolean = True
-		if (not boolean) and (k in list_categorical):
-			if row[k] not in lists_elements_categories[k]:
-				lists_elements_categories[k].append(row[k])
-	nb_of_training += 1
-
-features_errors = features_errors_0 + features_errors_NR
-
-list_keys_0 = row.keys()
-list_keys   = []
-for key in list_keys_0:
-	if key != 'id' and key != 'prime_tot_ttc':
-		list_keys.append(key)
-
-nb_features = len(list_keys) - len(list_categorical) + len(features_errors)
-nb_features_numerical   = len(list_keys) - len(list_categorical)
-nb_features_categorical = 0
-for feature in features_errors:
-	if feature in list_categorical:
-		nb_features_categorical += 1
-	else:
-		nb_features_numerical += 1
-
-for categorie in list_categorical:
-	nb_features_categorical += len(lists_elements_categories[categorie])
-	nb_features += len(lists_elements_categories[categorie])
-
-assert(nb_features_numerical + nb_features_categorical == nb_features)
-
-input_file = csv.DictReader(open("../data/ech_apprentissage.csv"), delimiter=';')
-
-nb_all              = nb_of_training
-X_train_categorical = np.zeros([nb_of_training, nb_features_categorical], dtype=np.int8)
-X_train_numerical   = np.zeros([nb_of_training, nb_features_numerical])
-y_train             = np.zeros(nb_of_training)
-label_string        = 'prime_tot_ttc'
-
-print nb_features_categorical, nb_features_numerical
-
-val_index    = np.arange(0, nb_all, 30)
-train_index  = list(np.arange(0, nb_all))
-for ind in val_index:
-	train_index.remove(ind)
-
-train_index = np.asarray(train_index)
-assert(len(val_index) + len(train_index) == nb_all)
-
-idx = 0
-for row in input_file:
-	idx_feature_numerical   = 0
-	idx_feature_categorical = 0
-	for k in list_keys:
-
-		if (k not in features_errors) and (k not in list_categorical):
-			X_train_numerical[idx, idx_feature_numerical] = row[k]
-			idx_feature_numerical    += 1
-
-		elif (k not in features_errors) and (k in list_categorical):
-			X_train_categorical[idx, idx_feature_categorical + lists_elements_categories[k].index(row[k])] = 1
-			idx_feature_categorical                                               += len(lists_elements_categories[k])
-
-		elif (k in features_errors) and (k not in list_categorical):
-                        # TODO find a better solution for the category ARMEE
-			if (row[k] == 'NR') or (row[k] == '') or (row[k] == 'ARMEE'):
-				X_train_numerical[idx, idx_feature_numerical]     = 1
-				X_train_numerical[idx, idx_feature_numerical + 1] = 0
-			else:
-				X_train_numerical[idx, idx_feature_numerical]     = 0
-				X_train_numerical[idx, idx_feature_numerical + 1] = row[k]
-
-			idx_feature_numerical             += 2
-
-		elif (k in features_errors) and (k in list_categorical):
-			if (row[k] == 'NR') or (row[k] == ''):
-				X_train_categorical[idx, idx_feature_categorical]     = 1
-			else:
-				X_train_categorical[idx, idx_feature_categorical]                                                  = 0
-				X_train_categorical[idx, idx_feature_categorical + 1 + lists_elements_categories[k].index(row[k])] = 1
-
-			idx_feature_categorical += len(lists_elements_categories[k]) + 1
-		else:
-			raise Exception
-	y_train[idx] = row[label_string]
-	idx += 1
-
-assert(idx_feature_numerical == nb_features_numerical)
-assert(idx_feature_categorical == nb_features_categorical)
-assert(idx_feature_categorical + idx_feature_numerical == nb_features)
-assert(idx == nb_all)
-
-X_train_numerical = X_train_numerical/np.max(X_train_numerical, axis=0)
-
-y_train_0 = np.array(y_train)
-
-X_train_cat = X_train_categorical[train_index]
-X_train_num = X_train_numerical[train_index]
-y_train     = y_train_0[train_index]
-
-X_val_cat   = X_train_categorical[val_index]
-X_val_num   = X_train_numerical[val_index]
-y_val       = y_train_0[val_index]
-
-print('features created')
-
-########################
-#      make HDF5       #
-########################
-
-import os
+import pandas
+import numpy
 import h5py
 from fuel.converters.base import progress_bar
-import numpy
-import math
 from fuel.datasets.hdf5 import H5PYDataset
-import pickle
 
-# Load pickle data train and test
-# [X_train_cat, X_train_num, y_train, X_val_cat, X_val_num, y_val] = pickle.load(open('../../data/train.pkl','rb'))
+BASEPATH = '../data/'
+list_categorical = ['energie_veh', 'marque', 'profession', 'var2', 'var3', 'var4', 'var5',
+                    'var6', 'var8', 'var13', 'var14', 'var15', 'var16', 'var17', 'var19', 'var20', 'var21', 'var22']
+list_interval = ['annee_naissance', 'annee_permis', 'puis_fiscale', 'anc_veh',
+                 'kmage_annuel', 'crm', 'var1', 'var7', 'var9', 'var10', 'var11', 'var12', 'var18']
+list_car = ['annee_naissance', 'annee_permis', 'marque', 'puis_fiscale', 'anc_veh', 'energie_veh', 'kmage_annuel',
+            'var7', 'var8', 'var9', 'var10']
+list_interval_car = [v for v in list_interval if v in list_car]
+list_interval_nocar = [v for v in list_interval if v not in list_car]
 
-# parameters for dividing the training set
-n_examples_train = X_train_cat.shape[0] # 290000
-n_examples_val   = X_val_cat.shape[0] # 10000
-n_total          = n_examples_train + n_examples_val
-n_features_cat   = X_train_cat.shape[1] # 24016
-n_features_num   = X_train_num.shape[1] # 17
-# n_features = 24033
+NA_VALUES = dict((column_name, ['NR']) for column_name in list_interval)
 
-# create hdf5 instance
-output_path       = '../data/data.hdf5'
-h5file            = h5py.File(output_path, mode='w')
-hdf_features_cat  = h5file.create_dataset('features_cat', (n_total, n_features_cat), dtype='int8')
-hdf_features_num  = h5file.create_dataset('features_num', (n_total, n_features_num), dtype='float32')
-hdf_labels        = h5file.create_dataset('labels', (n_total, 1), dtype='float32')
+def intersec(l1, l2):
+    return [filter(lambda x: x in l1, sublist) for sublist in l2]
 
-hdf_features_cat.dims[0].label = 'batch'
-hdf_features_cat.dims[1].label = 'features_cat'
-hdf_features_num.dims[0].label = 'batch'
-hdf_features_num.dims[1].label = 'features_num'
-hdf_labels.dims[0].label       = 'batch'
-hdf_labels.dims[1].label       = 'labels'
+print('Preprocess training set...')
+data_train = pandas.read_csv(BASEPATH + "ech_apprentissage.csv", delimiter=';', na_values=NA_VALUES)
+data_submit = pandas.read_csv(BASEPATH + "ech_test.csv", delimiter=';', na_values=NA_VALUES)
 
-# build hdf5 train and submit
-with progress_bar('train', n_examples_train) as bar:
-	for j in range(n_examples_train):
-		hdf_features_cat[j] = X_train_cat[j]
-		hdf_features_num[j] = X_train_num[j]
-		hdf_labels[j]       = y_train[j]
-		bar.update(j)
+list_uniques = dict((column_name, data_train[column_name].unique())
+                    for column_name in list_categorical)
+uniques_count = dict((column_name, len(v))
+                     for column_name, v in list_uniques.items())
+uniques_count_car = dict((column_name, val) for column_name, val in uniques_count.iteritems()
+                         if column_name in list_car)
+uniques_count_nocar = dict((column_name, val) for column_name, val in uniques_count.iteritems()
+                         if column_name not in list_car)
+total_uniques = sum(uniques_count.values())
+total_uniques_car = sum(uniques_count_car.values())
+total_uniques_nocar = sum(uniques_count_nocar.values()) + 1 # for car/nocar
+cumsums_car = numpy.cumsum(uniques_count_car.values())
+cumsums_nocar = numpy.cumsum(uniques_count_nocar.values())
+uniques_startindex_car = dict(
+    zip(uniques_count_car.keys(), numpy.append([0], cumsums_car)))
+uniques_startindex_nocar = dict(
+    zip(uniques_count_nocar.keys(), numpy.append([0], cumsums_nocar)))
+unique_to_index = dict((col, dict((v, i) for i, v in enumerate(values)))
+                       for col, values in list_uniques.items())
 
-with progress_bar('validation', n_examples_val) as bar:
-    for j in range(n_examples_val):
-    	hdf_features_cat[n_examples_train + j] = X_val_cat[j]
-    	hdf_features_num[n_examples_train + j] = X_val_num[j]
-    	hdf_labels[n_examples_train + j]       = y_val[j]
-    	bar.update(j)
+codepostaux = data_train['codepostal'].unique()
+codepostaux = numpy.append([0], codepostaux) # used for unknown CP
+cp_to_id = dict((cp, i) for i, cp in enumerate(codepostaux))
+
+print('Found categories:')
+for column_name, count in uniques_count.items():
+    print('%12s: %3d different values' % (column_name, count))
+print('Total: %d values in %d columns' %
+      (total_uniques, len(list_uniques.keys())))
+print('Category features:')
+print('Car: %d, Nocar: %d' % (total_uniques_car, total_uniques_nocar))
+print('Interval features:')
+print('Car: %d, Nocar: %d' % (len(list_interval_car), len(list_interval_nocar)))
+print('%d different code postaux' % (len(codepostaux),))
+
+print('Creating hdf5...')
+output_path = BASEPATH + 'data.hdf5'
+h5file = h5py.File(output_path, mode='w')
+n_total = len(data_train) + len(data_submit)
+hdf_features_car_cat = h5file.create_dataset(
+    'features_car_cat', (n_total, total_uniques_car), dtype='int8')
+hdf_features_car_int = h5file.create_dataset(
+    'features_car_int', (n_total, len(list_interval_car)), dtype='float32')
+hdf_features_nocar_cat = h5file.create_dataset(
+    'features_nocar_cat', (n_total, total_uniques_nocar), dtype='int8')
+hdf_features_nocar_int = h5file.create_dataset(
+    'features_nocar_int', (n_total, len(list_interval_nocar)), dtype='float32')
+hdf_labels = h5file.create_dataset('labels', (n_total, 1), dtype='float32')
+hdf_cp = h5file.create_dataset('codepostal', (n_total, 1), dtype='int32')
+
+hdf_features_car_cat.dims[0].label = 'batch'
+hdf_features_car_cat.dims[1].label = 'features_car_cat'
+hdf_features_car_int.dims[0].label = 'batch'
+hdf_features_car_int.dims[1].label = 'features_car_int'
+hdf_features_nocar_cat.dims[0].label = 'batch'
+hdf_features_nocar_cat.dims[1].label = 'features_nocar_cat'
+hdf_features_nocar_int.dims[0].label = 'batch'
+hdf_features_nocar_int.dims[1].label = 'features_nocar_int'
+hdf_labels.dims[0].label = 'batch'
+hdf_labels.dims[1].label = 'labels'
+hdf_cp.dims[0].label = 'batch'
+hdf_cp.dims[1].label = 'codepostal'
+
+missing_codepostaux = []
+
+for set_label, data in [('train', data_train), ('submit', data_submit)]:
+    start_i = 0 if set_label == 'train' else len(data_train)
+
+    with progress_bar(set_label, len(data)) as bar:
+        for i, row in data.iterrows():
+            # does the dude have a car ?
+            has_car = row['marque'] == 'NR'
+
+            # categorical features
+            feature_onehot_car_cat = numpy.zeros(total_uniques_car)
+            feature_onehot_nocar_cat = numpy.zeros(total_uniques_nocar)
+            for column_name in list_categorical:
+                try:
+                    if column_name in list_car:
+                        feature_onehot_car_cat[uniques_startindex_car[column_name]
+                                           + unique_to_index[column_name][row[column_name]]] = 1
+                    else:
+                        feature_onehot_nocar_cat[uniques_startindex_nocar[column_name]
+                                           + unique_to_index[column_name][row[column_name]]] = 1
+                    if has_car:
+                        feature_onehot_nocar_cat[-1] = 1
+                except Exception as e:
+                    print e
+                    print('Found a category that was not in the train set at index %d: %s for column %s' %
+                          (i, row[column_name], column_name)) 
+            hdf_features_car_cat[start_i + i] = feature_onehot_car_cat
+            hdf_features_nocar_cat[start_i + i] = feature_onehot_nocar_cat
+
+            # interval features
+            feature_car_interval = numpy.zeros(len(list_interval_car))
+            feature_nocar_interval = numpy.zeros(len(list_interval_nocar))
+            for j, column_name in enumerate([v for v in list_interval if v in list_car]):
+                try:
+                    feature_car_interval[j] = row[column_name]
+                except:
+                    print row
+            for j, column_name in enumerate([v for v in list_interval if v not in list_car]):
+                try:
+                    feature_nocar_interval[j] = row[column_name]
+                except:
+                    print row
+            hdf_features_car_int[start_i + i] = feature_car_interval
+            hdf_features_nocar_int[start_i + i] = feature_nocar_interval
+
+            # code postal
+            if row['codepostal'] in cp_to_id:
+                hdf_cp[start_i + i] = cp_to_id[row['codepostal']]
+            else:
+                hdf_cp[start_i + i] = cp_to_id[0]
+                missing_codepostaux.append(row['codepostal'])
+
+            # target
+            if set_label == 'train':
+                hdf_labels[start_i + i] = row['prime_tot_ttc']
+
+            bar.update(i)
+
+print('Code postaux not in the train set:', numpy.unique(missing_codepostaux, return_counts=True))
 
 # Save hdf5 train and submit
 split_dict = {}
-sources = ['features_cat', 'features_num', 'labels']
-for name, slice_ in zip(['train', 'validation'], [(0, n_examples_train), (n_examples_train, n_total)]):
+sources = ['features_car_cat', 'features_car_int', 'features_nocar_cat', 'features_nocar_int', 'labels', 'codepostal']
+for name, slice_ in zip(['train', 'submit'], [(0, len(data_train)), (len(data_train), n_total)]):
     split_dict[name] = dict(zip(sources, [slice_] * len(sources)))
 
 h5file.attrs['split'] = H5PYDataset.create_split_array(split_dict)
