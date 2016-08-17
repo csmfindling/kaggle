@@ -1,19 +1,17 @@
-import theano
-import numpy
-
 from theano import tensor
 
-## choose model
-from models.model_mlp import build_mlp
+# choose model
+from models.gated import build_mlp
 from blocks.algorithms import GradientDescent, Adam
 from blocks.model import Model
 
 
 # load model
-features                 = tensor.dmatrix('features')
-labels                   = tensor.dmatrix('labels')
-cost, params, valid_cost = build_mlp(features, labels)
-model                    = Model(cost)
+features_cat = tensor.dmatrix('features_cat')
+features_int = tensor.dmatrix('features_num')
+labels = tensor.dmatrix('labels')
+cost, params, valid_cost = build_mlp(features_cat, features_int, labels)
+model = Model(cost)
 
 # load data
 from fuel.streams import DataStream
@@ -21,14 +19,14 @@ from fuel.schemes import ShuffledScheme
 from fuel.datasets.hdf5 import H5PYDataset
 
 train_set = H5PYDataset(
-    '../data/data.hdf5',
+    './data/data.hdf5',
     which_sets=('train',),
     subset=slice(0, 290000), #
     load_in_memory=True
 )
 
 valid_set = H5PYDataset(
-    '../data/data.hdf5',
+    './data/data.hdf5',
     which_sets=('validation',),
     subset=slice(0, 9081), #
     load_in_memory=True
@@ -78,7 +76,7 @@ extensions = [
     DataStreamMonitoring(variables=[valid_cost], data_stream=valid_stream),
     #Plot('%s %s' % (socket.gethostname(), datetime.datetime.now(), ),channels=[['train_cost', 'valid_cost']], after_epoch=True, server_url=host_plot),
     TrackTheBest('valid_cost'),
-    Checkpoint('train', save_separately=["model","log"]),
+    Checkpoint('model', save_separately=["model","log"]),
     FinishIfNoImprovementAfter('valid_cost_best_so_far', epochs=5),
     #FinishAfter(after_n_epochs=100),
     Printing()

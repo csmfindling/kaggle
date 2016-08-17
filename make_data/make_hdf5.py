@@ -6,11 +6,11 @@ import csv
 import numpy as np
 
 
-input_file = csv.DictReader(open("../../data/ech_apprentissage.csv"), delimiter=';')
+input_file = csv.DictReader(open("../data/ech_apprentissage.csv"), delimiter=';')
 
 lists_elements_categories = {}
 #list_strings = ['energie_veh', 'marque', 'profession', 'var14', 'var6', 'var8', 'codepostal']
-list_categorical = ['energie_veh', 'marque', 'profession', 'codepostal', 'var2', 'var3', 'var4', 'var5', 'var6', 'var8', 'var13', 'var14', 'var15', 'var16', 'var17', 'var19', 'var20', 'var21', 'var22']
+list_categorical = ['energie_veh', 'marque', 'profession', 'var2', 'var3', 'var4', 'var5', 'var6', 'var8', 'var13', 'var14', 'var15', 'var16', 'var17', 'var19', 'var20', 'var21', 'var22']
 for cat in list_categorical:
 	lists_elements_categories[cat] = []
 
@@ -56,13 +56,15 @@ for categorie in list_categorical:
 
 assert(nb_features_numerical + nb_features_categorical == nb_features)
 
-input_file = csv.DictReader(open("../../data/ech_apprentissage.csv"), delimiter=';')
+input_file = csv.DictReader(open("../data/ech_apprentissage.csv"), delimiter=';')
 
 nb_all              = nb_of_training
 X_train_categorical = np.zeros([nb_of_training, nb_features_categorical], dtype=np.int8)
 X_train_numerical   = np.zeros([nb_of_training, nb_features_numerical])
 y_train             = np.zeros(nb_of_training)
 label_string        = 'prime_tot_ttc'
+
+print nb_features_categorical, nb_features_numerical
 
 val_index    = np.arange(0, nb_all, 30)
 train_index  = list(np.arange(0, nb_all))
@@ -87,7 +89,8 @@ for row in input_file:
 			idx_feature_categorical                                               += len(lists_elements_categories[k])
 
 		elif (k in features_errors) and (k not in list_categorical):
-			if (row[k] == 'NR') or (row[k] == ''):
+                        # TODO find a better solution for the category ARMEE
+			if (row[k] == 'NR') or (row[k] == '') or (row[k] == 'ARMEE'):
 				X_train_numerical[idx, idx_feature_numerical]     = 1
 				X_train_numerical[idx, idx_feature_numerical + 1] = 0
 			else:
@@ -152,7 +155,7 @@ n_features_num   = X_train_num.shape[1] # 17
 # n_features = 24033
 
 # create hdf5 instance
-output_path       = '../../data/data.hdf5'
+output_path       = '../data/data.hdf5'
 h5file            = h5py.File(output_path, mode='w')
 hdf_features_cat  = h5file.create_dataset('features_cat', (n_total, n_features_cat), dtype='int8')
 hdf_features_num  = h5file.create_dataset('features_num', (n_total, n_features_num), dtype='float32')
