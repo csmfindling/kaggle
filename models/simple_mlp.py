@@ -47,4 +47,4 @@ def build_mlp(features_car_cat, features_car_int, features_nocar_cat, features_n
     cg_dropout1 = apply_dropout(cg, [input_var[6], input_var[7]], .4)
     cost_dropout1 = cg_dropout1.outputs[0]
 
-    return cost_dropout1, cg_dropout1.parameters, cost
+    return prediction, cost_dropout1, cg_dropout1.parameters, cost
