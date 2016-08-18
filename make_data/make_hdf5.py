@@ -95,8 +95,6 @@ for set_label, data in [('train', data_train), ('submit', data_submit)]:
         for i, row in data.iterrows():
             # does the dude have a car ?
             has_car = row['marque'] != 'NR'
-            if not has_car:
-                print has_car
 
             # categorical features
             feature_onehot_car_cat = numpy.zeros(total_uniques_car)
