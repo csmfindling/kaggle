@@ -42,22 +42,29 @@ valid_stream = DataStream.default_stream(
 print('Computing mean target values')
 cps = []
 primes = []
+hascar = []
 cp_index = train_set.provides_sources.index('codepostal')
 prime_index = train_set.provides_sources.index('labels')
+hascar_index = train_set.provides_sources.index('features_hascar')
 
 for d in train_stream.get_epoch_iterator():
     cps.append(d[cp_index])
     primes.append(d[prime_index])
+    hascar.append(d[hascar_index])
 
 cps = numpy.array(cps).flatten()
+hascar = numpy.array(hascar).flatten()
 primes = numpy.array(primes).flatten()
-
+overall_mean = primes[hascar == 1].mean()
 means = []
 freqs = []
 s = 0
 for cp in range(23712):
-    freqs.append((cps==cp).sum())
-    means.append(primes[cps==cp].mean()) 
+    freqs.append((numpy.logical_and(cps==cp, hascar==1)).sum())
+    if freqs[-1] > 0:
+        means.append(primes[numpy.logical_and(cps==cp, hascar==1)].mean()) 
+    else:
+        means.append(overall_mean)
 means = numpy.array(means).astype(config.floatX)
 means = shared(value=means)
 
@@ -67,9 +74,10 @@ features_car_int = tensor.dmatrix('features_car_int')
 features_nocar_cat = tensor.dmatrix('features_nocar_cat')
 features_nocar_int = tensor.dmatrix('features_nocar_int')
 features_cp = tensor.imatrix('codepostal')
+features_hascar = tensor.imatrix('features_hascar')
 labels = tensor.dmatrix('labels')
 cost, params, valid_cost = build_mlp(features_car_cat, features_car_int, features_nocar_cat, features_nocar_int,
-                                     features_cp, means, labels)
+                                     features_cp, features_hascar, means, labels)
 model = Model(cost)
 
 # load algorithm

@@ -15,16 +15,17 @@ class MAPECost(Cost):
         return 100*e_y_hat.mean()
 
 
-def build_mlp(features_car_cat, features_car_int, features_nocar_cat, features_nocar_int, features_cp, means, labels):
+def build_mlp(features_car_cat, features_car_int, features_nocar_cat, features_nocar_int, features_cp, features_hascar,
+              means, labels):
 
-    mlp_car = MLP(activations=[Rectifier(), Rectifier(), None],
-                  dims=[8 + 185, 50, 50, 1],
+    mlp_car = MLP(activations=[Rectifier(), None],
+                  dims=[8 + 185, 250, 1],
                   weights_init=IsotropicGaussian(.1),
                   biases_init=Constant(0),
                   name='mlp_interval_car')
     mlp_car.initialize()
-    mlp_nocar = MLP(activations=[Rectifier(), Rectifier(), None],
-                  dims=[5 + 136, 50, 50, 1],
+    mlp_nocar = MLP(activations=[Rectifier(), None],
+                  dims=[5 + 135, 250, 1],
                   weights_init=IsotropicGaussian(.1),
                   biases_init=Constant(0),
                   name='mlp_interval_nocar')
@@ -34,14 +35,16 @@ def build_mlp(features_car_cat, features_car_int, features_nocar_cat, features_n
     feature_nocar = tensor.concatenate((features_nocar_cat, features_nocar_int), axis=1)
     prediction = mlp_nocar.apply(feature_nocar)
     # gating with the last feature : does the dude own a car
-    prediction += tensor.addbroadcast(features_nocar_cat[:,-1:], 1) * mlp_car.apply(feature_car)
+    prediction += tensor.addbroadcast(features_hascar, 1) * mlp_car.apply(feature_car)
+    prediction += means[features_cp]
 
     cost = MAPECost().apply(prediction, labels)
 
     cg = ComputationGraph(cost)
-    var = VariableFilter(roles=[INPUT])(cg.variables)
+    input_var = VariableFilter(roles=[INPUT])(cg.variables)
+    print input_var
 
-    cg_dropout1 = apply_dropout(cg, [var[4], var[5], var[8], var[9]], .2)
+    cg_dropout1 = apply_dropout(cg, [input_var[6], input_var[7]], .4)
     cost_dropout1 = cg_dropout1.outputs[0]
 
     return cost_dropout1, cg_dropout1.parameters, cost

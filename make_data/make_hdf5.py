@@ -33,7 +33,7 @@ uniques_count_nocar = dict((column_name, val) for column_name, val in uniques_co
                          if column_name not in list_car)
 total_uniques = sum(uniques_count.values())
 total_uniques_car = sum(uniques_count_car.values())
-total_uniques_nocar = sum(uniques_count_nocar.values()) + 1 # for car/nocar
+total_uniques_nocar = sum(uniques_count_nocar.values())
 cumsums_car = numpy.cumsum(uniques_count_car.values())
 cumsums_nocar = numpy.cumsum(uniques_count_nocar.values())
 uniques_startindex_car = dict(
@@ -72,6 +72,7 @@ hdf_features_nocar_int = h5file.create_dataset(
     'features_nocar_int', (n_total, len(list_interval_nocar)), dtype='float32')
 hdf_labels = h5file.create_dataset('labels', (n_total, 1), dtype='float32')
 hdf_cp = h5file.create_dataset('codepostal', (n_total, 1), dtype='int32')
+hdf_hascar= h5file.create_dataset('features_hascar', (n_total, 1), dtype='int8')
 
 hdf_features_car_cat.dims[0].label = 'batch'
 hdf_features_car_cat.dims[1].label = 'features_car_cat'
@@ -85,6 +86,8 @@ hdf_labels.dims[0].label = 'batch'
 hdf_labels.dims[1].label = 'labels'
 hdf_cp.dims[0].label = 'batch'
 hdf_cp.dims[1].label = 'codepostal'
+hdf_hascar.dims[0].label = 'batch'
+hdf_hascar.dims[1].label = 'hascar'
 
 missing_codepostaux = []
 
@@ -95,6 +98,7 @@ for set_label, data in [('train', data_train), ('submit', data_submit)]:
         for i, row in data.iterrows():
             # does the dude have a car ?
             has_car = row['marque'] != 'NR'
+            hdf_hascar[start_i + i] = 1 if has_car else 0
 
             # categorical features
             feature_onehot_car_cat = numpy.zeros(total_uniques_car)
@@ -107,8 +111,6 @@ for set_label, data in [('train', data_train), ('submit', data_submit)]:
                     else:
                         feature_onehot_nocar_cat[uniques_startindex_nocar[column_name]
                                            + unique_to_index[column_name][row[column_name]]] = 1
-                    if has_car:
-                        feature_onehot_nocar_cat[-1] = 1
                 except:
                     print('Found a category that was not in the train set at index %d: %s for column %s' %
                           (i, row[column_name], column_name)) 
@@ -144,7 +146,8 @@ print('Code postaux not in the train set:', numpy.unique(missing_codepostaux, re
 
 # Save hdf5 train and submit
 split_dict = {}
-sources = ['features_car_cat', 'features_car_int', 'features_nocar_cat', 'features_nocar_int', 'labels', 'codepostal']
+sources = ['features_car_cat', 'features_car_int', 'features_nocar_cat', 'features_nocar_int',
+           'labels', 'codepostal', 'features_hascar']
 for name, slice_ in zip(['train', 'submit'], [(0, len(data_train)), (len(data_train), n_total)]):
     split_dict[name] = dict(zip(sources, [slice_] * len(sources)))
 
