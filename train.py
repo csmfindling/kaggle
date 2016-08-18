@@ -79,9 +79,9 @@ features_nocar_int = tensor.dmatrix('features_nocar_int')
 features_cp = tensor.imatrix('codepostal')
 features_hascar = tensor.imatrix('features_hascar')
 labels = tensor.dmatrix('labels')
-cost, params, valid_cost = build_mlp(features_car_cat, features_car_int, features_nocar_cat, features_nocar_int,
+prediction, cost, params, valid_cost = build_mlp(features_car_cat, features_car_int, features_nocar_cat, features_nocar_int,
                                      features_cp, features_hascar, means, labels)
-model = Model(cost)
+model = Model([cost, prediction])
 
 # load algorithm
 from blocks.algorithms import Adam
