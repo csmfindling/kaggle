@@ -19,13 +19,13 @@ def build_mlp(features_car_cat, features_car_int, features_nocar_cat, features_n
               means, labels):
 
     mlp_car = MLP(activations=[Rectifier(), None],
-                  dims=[8 + 185, 250, 1],
+                  dims=[8 + 185, 800, 1],
                   weights_init=IsotropicGaussian(.1),
                   biases_init=Constant(0),
                   name='mlp_interval_car')
     mlp_car.initialize()
     mlp_nocar = MLP(activations=[Rectifier(), None],
-                  dims=[5 + 135, 250, 1],
+                  dims=[5 + 135, 800, 1],
                   weights_init=IsotropicGaussian(.1),
                   biases_init=Constant(0),
                   name='mlp_interval_nocar')
@@ -36,7 +36,7 @@ def build_mlp(features_car_cat, features_car_int, features_nocar_cat, features_n
     prediction = mlp_nocar.apply(feature_nocar)
     # gating with the last feature : does the dude own a car
     prediction += tensor.addbroadcast(features_hascar, 1) * mlp_car.apply(feature_car)
-    prediction += means[features_cp]
+    prediction += tensor.addbroadcast(means[features_cp, None], 1)
 
     cost = MAPECost().apply(prediction, labels)
 
