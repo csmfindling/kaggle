@@ -9,9 +9,9 @@ variables :
  - codepostal: categorical
  - energie_veh: categorical
  - kmage_annuel: interval
- - crm: interval [0 - 100]?
+ - crm: interval [0 - 100]? pas entre [0-100] plutot [50-150] ex ligne 1450 mais oui pour interval je pense
  - profession: categorical
- - var1: interval?
+ - var1: interval? ouai je pense
  - var2: categorical
  - var3: categorical
  - var4: categorical
