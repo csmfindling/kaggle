@@ -40,9 +40,8 @@ def build_mlp(features_car_cat, features_car_int, features_nocar_cat, features_n
 
     cg = ComputationGraph(cost)
     var = VariableFilter(roles=[INPUT])(cg.variables)
-    print var
 
-    cg_dropout1   = apply_dropout(cg, [var[0], var[1]], .2)
+    cg_dropout1 = apply_dropout(cg, [var[4], var[5], var[8], var[9]], .2)
     cost_dropout1 = cg_dropout1.outputs[0]
 
     return cost_dropout1, cg_dropout1.parameters, cost

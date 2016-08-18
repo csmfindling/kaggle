@@ -94,7 +94,9 @@ for set_label, data in [('train', data_train), ('submit', data_submit)]:
     with progress_bar(set_label, len(data)) as bar:
         for i, row in data.iterrows():
             # does the dude have a car ?
-            has_car = row['marque'] == 'NR'
+            has_car = row['marque'] != 'NR'
+            if not has_car:
+                print has_car
 
             # categorical features
             feature_onehot_car_cat = numpy.zeros(total_uniques_car)
@@ -109,8 +111,7 @@ for set_label, data in [('train', data_train), ('submit', data_submit)]:
                                            + unique_to_index[column_name][row[column_name]]] = 1
                     if has_car:
                         feature_onehot_nocar_cat[-1] = 1
-                except Exception as e:
-                    print e
+                except:
                     print('Found a category that was not in the train set at index %d: %s for column %s' %
                           (i, row[column_name], column_name)) 
             hdf_features_car_cat[start_i + i] = feature_onehot_car_cat
@@ -120,15 +121,11 @@ for set_label, data in [('train', data_train), ('submit', data_submit)]:
             feature_car_interval = numpy.zeros(len(list_interval_car))
             feature_nocar_interval = numpy.zeros(len(list_interval_nocar))
             for j, column_name in enumerate([v for v in list_interval if v in list_car]):
-                try:
+                if not numpy.isnan(row[column_name]):
                     feature_car_interval[j] = row[column_name]
-                except:
-                    print row
             for j, column_name in enumerate([v for v in list_interval if v not in list_car]):
-                try:
+                if not numpy.isnan(row[column_name]):
                     feature_nocar_interval[j] = row[column_name]
-                except:
-                    print row
             hdf_features_car_int[start_i + i] = feature_car_interval
             hdf_features_nocar_int[start_i + i] = feature_nocar_interval
 
