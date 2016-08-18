@@ -22,6 +22,8 @@ def intersec(l1, l2):
 print('Preprocess training set...')
 data_train = pandas.read_csv(BASEPATH + "ech_apprentissage.csv", delimiter=';', na_values=NA_VALUES)
 data_submit = pandas.read_csv(BASEPATH + "ech_test.csv", delimiter=';', na_values=NA_VALUES)
+#shuffle data_train
+data_train = data_train.sample(frac=1).reset_index(drop=True)
 
 list_uniques = dict((column_name, data_train[column_name].unique())
                     for column_name in list_categorical)
@@ -46,6 +48,10 @@ unique_to_index = dict((col, dict((v, i) for i, v in enumerate(values)))
 codepostaux = data_train['codepostal'].unique()
 codepostaux = numpy.append([0], codepostaux) # used for unknown CP
 cp_to_id = dict((cp, i) for i, cp in enumerate(codepostaux))
+
+min_max = dict((key, (numpy.nanmin(data_train[key].values), numpy.nanmax(data_train[key].values)))
+               for key in list_interval)
+print min_max
 
 print('Found categories:')
 for column_name, count in uniques_count.items():
@@ -122,10 +128,12 @@ for set_label, data in [('train', data_train), ('submit', data_submit)]:
             feature_nocar_interval = numpy.zeros(len(list_interval_nocar))
             for j, column_name in enumerate([v for v in list_interval if v in list_car]):
                 if not numpy.isnan(row[column_name]):
-                    feature_car_interval[j] = row[column_name]
+                    feature_car_interval[j] = (float(row[column_name]) - min_max[column_name][0]) \
+                            / (min_max[column_name][1] - min_max[column_name][0])
             for j, column_name in enumerate([v for v in list_interval if v not in list_car]):
                 if not numpy.isnan(row[column_name]):
-                    feature_nocar_interval[j] = row[column_name]
+                    feature_nocar_interval[j] = (float(row[column_name]) - min_max[column_name][0]) \
+                            / (min_max[column_name][1] - min_max[column_name][0])
             hdf_features_car_int[start_i + i] = feature_car_interval
             hdf_features_nocar_int[start_i + i] = feature_nocar_interval
 

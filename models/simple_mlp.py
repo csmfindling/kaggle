@@ -36,7 +36,6 @@ def build_mlp(features_car_cat, features_car_int, features_nocar_cat, features_n
     prediction = mlp_nocar.apply(feature_nocar)
     # gating with the last feature : does the dude own a car
     prediction += tensor.addbroadcast(features_hascar, 1) * mlp_car.apply(feature_car)
-    prediction += tensor.addbroadcast(means[features_cp, None], 1)
     prediction -= (1 - features_hascar) * 142.241
     prediction += tensor.addbroadcast(means[features_cp], 1)
 
