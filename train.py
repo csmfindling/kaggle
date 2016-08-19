@@ -67,6 +67,7 @@ for cp in range(23712):
     else:
         means.append(overall_mean)
 means = numpy.array(means).astype(config.floatX)
+means[0] = overall_mean
 means = shared(value=means)
 
 # load model
