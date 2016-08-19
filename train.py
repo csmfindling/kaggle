@@ -3,7 +3,9 @@ from theano import tensor, shared, config
 # choose model
 # from models.simple_mlp2 import build_mlp
 # from models.gated import build_mlp
-from models.simple_mlp import build_mlp
+# from models.simple_mlp import build_mlp
+from models.only_localization import build_mlp
+
 from blocks.algorithms import GradientDescent, Adam
 from blocks.model import Model
 import numpy
@@ -72,9 +74,12 @@ for cp in range(23712):
         means_by_cp.append([primes[numpy.logical_and(cps==cp, hascar==1)].mean(), freq]) 
     else:
         means_by_cp.append([overall_mean, freq])
-for dep in range(deps.max()):
+for dep in range(101):
     freq = (numpy.logical_and(deps==dep, hascar==1)).sum()
-    means_by_dep.append([primes[numpy.logical_and(deps==dep, hascar==1)].mean(), freq]) 
+    if freq > 0:
+        means_by_dep.append([primes[numpy.logical_and(deps==dep, hascar==1)].mean(), freq]) 
+    else:
+        means_by_dep.append([overall_mean, freq])
 
 means_by_cp = numpy.array(means_by_cp).astype(config.floatX)
 means_by_dep = numpy.array(means_by_dep).astype(config.floatX)
