@@ -1,6 +1,7 @@
 from theano import tensor, shared, config
 
 # choose model
+# from models.simple_mlp2 import build_mlp
 # from models.gated import build_mlp
 from models.simple_mlp import build_mlp
 from blocks.algorithms import GradientDescent, Adam
@@ -60,18 +61,20 @@ deps = numpy.array(deps).flatten()
 hascar = numpy.array(hascar).flatten()
 primes = numpy.array(primes).flatten()
 overall_mean = primes[hascar == 1].mean()
+
 means_by_cp = []
 means_by_dep = []
 freqs = []
 s = 0
 for cp in range(23712):
-    freqs.append((numpy.logical_and(cps==cp, hascar==1)).sum())
-    if freqs[-1] > 0:
-        means_by_cp.append(primes[numpy.logical_and(cps==cp, hascar==1)].mean()) 
+    freq = (numpy.logical_and(cps==cp, hascar==1)).sum()
+    if freq > 0:
+        means_by_cp.append([primes[numpy.logical_and(cps==cp, hascar==1)].mean(), freq]) 
     else:
-        means_by_cp.append(overall_mean)
+        means_by_cp.append([overall_mean, freq])
 for dep in range(deps.max()):
-    means_by_dep.append(primes[numpy.logical_and(deps==dep, hascar==1)].mean()) 
+    freq = (numpy.logical_and(deps==dep, hascar==1)).sum()
+    means_by_dep.append([primes[numpy.logical_and(deps==dep, hascar==1)].mean(), freq]) 
 
 means_by_cp = numpy.array(means_by_cp).astype(config.floatX)
 means_by_dep = numpy.array(means_by_dep).astype(config.floatX)
@@ -121,7 +124,7 @@ extensions = [
     Timing(),
     TrainingDataMonitoring([cost], after_epoch=True, prefix='train'),
     DataStreamMonitoring(variables=[valid_cost], data_stream=valid_stream),
-    #Plot('%s %s' % (socket.gethostname(), datetime.datetime.now(), ),channels=[['train_cost', 'valid_cost']], after_epoch=True, server_url=host_plot),
+    Plot('%s %s' % (socket.gethostname(), datetime.datetime.now(), ),channels=[['train_cost', 'valid_cost']], after_epoch=True, server_url=host_plot),
     TrackTheBest('valid_cost'),
     Checkpoint('model', save_separately=["model","log"]),
     FinishIfNoImprovementAfter('valid_cost_best_so_far', epochs=5),
