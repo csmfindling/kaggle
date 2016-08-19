@@ -6,29 +6,22 @@ from blocks.filter import VariableFilter
 from blocks.roles import PARAMETER, OUTPUT, INPUT
 from theano import tensor
 
-
-class MAPECost(Cost):
-
-    @application(outputs=["cost"])
-    def apply(self, y, y_hat):
-        e_y_hat = tensor.abs_(y - y_hat)/y
-        return 100*e_y_hat.mean()
-
+from cost import MAPECost
 
 def build_mlp(features_car_cat, features_car_int, features_nocar_cat, features_nocar_int, features_cp, features_hascar,
               means, labels):
 
-    mlp_car = MLP(activations=[Rectifier(), None],
-                  dims=[8 + 185, 800, 1],
+    mlp_car = MLP(activations=[Rectifier(), Rectifier(), None],
+                  dims=[8 + 185, 200, 200, 1],
                   weights_init=IsotropicGaussian(.1),
                   biases_init=Constant(0),
                   name='mlp_interval_car')
     mlp_car.initialize()
-    mlp_nocar = MLP(activations=[Rectifier(), None],
-                  dims=[5 + 135, 800, 1],
-                  weights_init=IsotropicGaussian(.1),
-                  biases_init=Constant(0),
-                  name='mlp_interval_nocar')
+    mlp_nocar = MLP(activations=[Rectifier(), Rectifier(), None],
+                    dims=[5 + 135, 200, 200, 1],
+                    weights_init=IsotropicGaussian(.1),
+                    biases_init=Constant(0),
+                    name='mlp_interval_nocar')
     mlp_nocar.initialize()
 
     feature_car = tensor.concatenate((features_car_cat, features_car_int), axis=1)
@@ -39,7 +32,7 @@ def build_mlp(features_car_cat, features_car_int, features_nocar_cat, features_n
     prediction -= (1 - features_hascar) * 142.241
     prediction += means['cp'][features_cp[:, :1], 0]
 
-    cost = MAPECost().apply(prediction, labels)
+    cost = MAPECost().apply(labels, prediction)
 
     cg = ComputationGraph(cost)
     input_var = VariableFilter(roles=[INPUT])(cg.variables)
