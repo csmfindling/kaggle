@@ -1,7 +1,9 @@
 from theano import tensor, shared, config
 
 # choose model
-from models.simple_mlp2 import build_mlp
+# from models.simple_mlp2 import build_mlp
+# from models.gated import build_mlp
+# from models.simple_mlp import build_mlp
 from blocks.algorithms import GradientDescent, Adam
 from blocks.model import Model
 import numpy
@@ -69,6 +71,7 @@ for cp in range(23712):
     stats.append(overall_mean)
     means.append(stats)
 means = numpy.array(means).astype(config.floatX)
+means[0] = overall_mean
 means = shared(value=means)
 
 # load model

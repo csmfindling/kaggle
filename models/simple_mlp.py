@@ -11,7 +11,7 @@ class MAPECost(Cost):
 
     @application(outputs=["cost"])
     def apply(self, y, y_hat):
-        e_y_hat = tensor.abs_(y - y_hat)/y_hat
+        e_y_hat = tensor.abs_(y - y_hat)/y
         return 100*e_y_hat.mean()
 
 
@@ -36,6 +36,7 @@ def build_mlp(features_car_cat, features_car_int, features_nocar_cat, features_n
     prediction = mlp_nocar.apply(feature_nocar)
     # gating with the last feature : does the dude own a car
     prediction += tensor.addbroadcast(features_hascar, 1) * mlp_car.apply(feature_car)
+    prediction -= (1 - features_hascar) * 142.241
     prediction += tensor.addbroadcast(means[features_cp], 1)
 
     cost = MAPECost().apply(prediction, labels)
