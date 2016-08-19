@@ -78,6 +78,12 @@ print('Interval features:')
 print('Car: %d, Nocar: %d' % (len(list_interval_car), len(list_interval_nocar)))
 print('%d different code postaux' % (len(codepostaux),))
 
+print('Feature ordering:')
+print('Car related features')
+print([v for v in list_interval if v in list_car])
+print('Other features')
+print([v for v in list_interval if v not in list_car])
+
 print('Creating hdf5...')
 output_path = BASEPATH + 'data.hdf5'
 h5file = h5py.File(output_path, mode='w')

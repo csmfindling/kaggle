@@ -3,8 +3,9 @@ from theano import tensor, shared, config
 # choose model
 # from models.simple_mlp2 import build_mlp
 # from models.gated import build_mlp
-# from models.simple_mlp import build_mlp
-from models.only_localization import build_mlp
+#from models.simple_mlp import build_mlp
+#from models.only_localization import build_mlp
+from models.loc_crm import build_mlp
 
 from blocks.algorithms import GradientDescent, Adam
 from blocks.model import Model
