@@ -1,6 +1,7 @@
 from theano import tensor, shared, config
 
 # choose model
+# from models.gated import build_mlp
 from models.simple_mlp import build_mlp
 from blocks.algorithms import GradientDescent, Adam
 from blocks.model import Model
