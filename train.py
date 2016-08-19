@@ -1,7 +1,9 @@
 from theano import tensor, shared, config
 
 # choose model
-from models.simple_mlp import build_mlp
+# from models.simple_mlp2 import build_mlp
+# from models.gated import build_mlp
+# from models.simple_mlp import build_mlp
 from blocks.algorithms import GradientDescent, Adam
 from blocks.model import Model
 import numpy
@@ -13,14 +15,14 @@ from fuel.schemes import ShuffledScheme
 from fuel.datasets.hdf5 import H5PYDataset
 
 train_set = H5PYDataset(
-    './data/data.hdf5',
+    '../data/data.hdf5',
     which_sets=('train',),
     subset=slice(0, 290000), #
     load_in_memory=True
 )
 
 valid_set = H5PYDataset(
-    './data/data.hdf5',
+    '../data/data.hdf5',
     which_sets=('train',),
     subset=slice(290000, 300000), #
     load_in_memory=True
@@ -57,15 +59,19 @@ hascar = numpy.array(hascar).flatten()
 primes = numpy.array(primes).flatten()
 overall_mean = primes[hascar == 1].mean()
 means = []
-freqs = []
+#freqs = []
 s = 0
 for cp in range(23712):
-    freqs.append((numpy.logical_and(cps==cp, hascar==1)).sum())
-    if freqs[-1] > 0:
-        means.append(primes[numpy.logical_and(cps==cp, hascar==1)].mean()) 
+    stats = []
+    stats.append((numpy.logical_and(cps==cp, hascar==1)).sum())
+    if stats[-1] > 0:
+        stats.append(primes[numpy.logical_and(cps==cp, hascar==1)].mean()) 
     else:
-        means.append(overall_mean)
+        stats.append(overall_mean)
+    stats.append(overall_mean)
+    means.append(stats)
 means = numpy.array(means).astype(config.floatX)
+means[0] = overall_mean
 means = shared(value=means)
 
 # load model
@@ -109,7 +115,7 @@ extensions = [
     Timing(),
     TrainingDataMonitoring([cost], after_epoch=True, prefix='train'),
     DataStreamMonitoring(variables=[valid_cost], data_stream=valid_stream),
-    #Plot('%s %s' % (socket.gethostname(), datetime.datetime.now(), ),channels=[['train_cost', 'valid_cost']], after_epoch=True, server_url=host_plot),
+    Plot('%s %s' % (socket.gethostname(), datetime.datetime.now(), ),channels=[['train_cost', 'valid_cost']], after_epoch=True, server_url=host_plot),
     TrackTheBest('valid_cost'),
     Checkpoint('model', save_separately=["model","log"]),
     FinishIfNoImprovementAfter('valid_cost_best_so_far', epochs=5),
