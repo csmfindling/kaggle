@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import pandas
 import numpy
 import h5py
@@ -16,12 +18,18 @@ list_interval_nocar = [v for v in list_interval if v not in list_car]
 
 NA_VALUES = dict((column_name, ['NR']) for column_name in list_interval)
 
-def intersec(l1, l2):
-    return [filter(lambda x: x in l1, sublist) for sublist in l2]
+def cp_reader(x):
+    if x == 'ARMEE':
+        return 100000
+    if x == 'NR':
+        return 0
+    return int(x)
+
+CONVERTERS = {'codepostal': cp_reader}
 
 print('Preprocess training set...')
-data_train = pandas.read_csv(BASEPATH + "ech_apprentissage.csv", delimiter=';', na_values=NA_VALUES)
-data_submit = pandas.read_csv(BASEPATH + "ech_test.csv", delimiter=';', na_values=NA_VALUES)
+data_train = pandas.read_csv(BASEPATH + "ech_apprentissage.csv", delimiter=';', na_values=NA_VALUES, converters=CONVERTERS)
+data_submit = pandas.read_csv(BASEPATH + "ech_test.csv", delimiter=';', na_values=NA_VALUES, converters=CONVERTERS)
 #shuffle data_train
 data_train = data_train.sample(frac=1).reset_index(drop=True)
 
@@ -49,8 +57,14 @@ codepostaux = data_train['codepostal'].unique()
 codepostaux = numpy.append([0], codepostaux) # used for unknown CP
 cp_to_id = dict((cp, i) for i, cp in enumerate(codepostaux))
 
+departements = numpy.unique([c/1000 for c in codepostaux])
+dep_to_id = dict((dep, i) for i, dep in enumerate(departements))
+print('Found départements:')
+print(departements)
+
 min_max = dict((key, (numpy.nanmin(data_train[key].values), numpy.nanmax(data_train[key].values)))
                for key in list_interval)
+print('Min/max values for each category:')
 print min_max
 
 print('Found categories:')
@@ -77,7 +91,7 @@ hdf_features_nocar_cat = h5file.create_dataset(
 hdf_features_nocar_int = h5file.create_dataset(
     'features_nocar_int', (n_total, len(list_interval_nocar)), dtype='float32')
 hdf_labels = h5file.create_dataset('labels', (n_total, 1), dtype='float32')
-hdf_cp = h5file.create_dataset('codepostal', (n_total, 1), dtype='int32')
+hdf_cp = h5file.create_dataset('codepostal', (n_total, 2), dtype='int32')
 hdf_hascar= h5file.create_dataset('features_hascar', (n_total, 1), dtype='int8')
 
 hdf_features_car_cat.dims[0].label = 'batch'
@@ -96,6 +110,7 @@ hdf_hascar.dims[0].label = 'batch'
 hdf_hascar.dims[1].label = 'hascar'
 
 missing_codepostaux = []
+missing_departements = []
 
 for set_label, data in [('train', data_train), ('submit', data_submit)]:
     start_i = 0 if set_label == 'train' else len(data_train)
@@ -138,11 +153,24 @@ for set_label, data in [('train', data_train), ('submit', data_submit)]:
             hdf_features_nocar_int[start_i + i] = feature_nocar_interval
 
             # code postal
-            if row['codepostal'] in cp_to_id:
-                hdf_cp[start_i + i] = cp_to_id[row['codepostal']]
+            cp = row['codepostal']
+            cp_feat = numpy.zeros(2)
+            if cp in cp_to_id:
+                cp_feat[0] = cp_to_id[cp]
             else:
-                hdf_cp[start_i + i] = cp_to_id[0]
-                missing_codepostaux.append(row['codepostal'])
+                cp_feat[0] = cp_to_id[0]
+                missing_codepostaux.append(cp)
+
+            # departement
+            dep = cp/1000 if type(cp) == int else cp[:2]
+            if dep in dep_to_id:
+                cp_feat[1] = dep_to_id[dep]
+            else:
+                cp_feat[1] = dep_to_id[0]
+                missing_departements.append(dep)
+
+
+            hdf_cp[start_i + i] = cp_feat
 
             # target
             if set_label == 'train':
@@ -151,6 +179,7 @@ for set_label, data in [('train', data_train), ('submit', data_submit)]:
             bar.update(i)
 
 print('Code postaux not in the train set:', numpy.unique(missing_codepostaux, return_counts=True))
+print('Départements not in the train set:', numpy.unique(missing_departements, return_counts=True))
 
 # Save hdf5 train and submit
 split_dict = {}

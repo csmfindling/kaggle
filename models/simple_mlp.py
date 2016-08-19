@@ -37,7 +37,7 @@ def build_mlp(features_car_cat, features_car_int, features_nocar_cat, features_n
     # gating with the last feature : does the dude own a car
     prediction += tensor.addbroadcast(features_hascar, 1) * mlp_car.apply(feature_car)
     prediction -= (1 - features_hascar) * 142.241
-    prediction += tensor.addbroadcast(means[features_cp], 1)
+    prediction += means['cp'][features_cp[:,:1]]
 
     cost = MAPECost().apply(prediction, labels)
 

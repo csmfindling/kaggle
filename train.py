@@ -40,8 +40,9 @@ valid_stream = DataStream.default_stream(
 )
 
 # compute mean target values
-print('Computing mean target values')
+print('Computing mean target values...')
 cps = []
+deps = []
 primes = []
 hascar = []
 cp_index = train_set.provides_sources.index('codepostal')
@@ -49,26 +50,35 @@ prime_index = train_set.provides_sources.index('labels')
 hascar_index = train_set.provides_sources.index('features_hascar')
 
 for d in train_stream.get_epoch_iterator():
-    cps.append(d[cp_index])
+    cps.append(d[cp_index][:, 0])
+    deps.append(d[cp_index][:, 1])
     primes.append(d[prime_index])
     hascar.append(d[hascar_index])
 
 cps = numpy.array(cps).flatten()
+deps = numpy.array(deps).flatten()
 hascar = numpy.array(hascar).flatten()
 primes = numpy.array(primes).flatten()
 overall_mean = primes[hascar == 1].mean()
-means = []
+means_by_cp = []
+means_by_dep = []
 freqs = []
 s = 0
 for cp in range(23712):
     freqs.append((numpy.logical_and(cps==cp, hascar==1)).sum())
     if freqs[-1] > 0:
-        means.append(primes[numpy.logical_and(cps==cp, hascar==1)].mean()) 
+        means_by_cp.append(primes[numpy.logical_and(cps==cp, hascar==1)].mean()) 
     else:
-        means.append(overall_mean)
-means = numpy.array(means).astype(config.floatX)
-means[0] = overall_mean
-means = shared(value=means)
+        means_by_cp.append(overall_mean)
+for dep in range(deps.max()):
+    means_by_dep.append(primes[numpy.logical_and(deps==dep, hascar==1)].mean()) 
+
+means_by_cp = numpy.array(means_by_cp).astype(config.floatX)
+means_by_dep = numpy.array(means_by_dep).astype(config.floatX)
+means = {'cp': shared(value=means_by_cp),
+         'dep': shared(value=means_by_dep)}
+
+print('done.')
 
 # load model
 features_car_cat = tensor.dmatrix('features_car_cat')
