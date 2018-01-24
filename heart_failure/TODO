@@ -1,0 +1,12 @@
+- merge 2 models into 1
+- fuel data pipeline
+- use lstm as last layer
+- use fully convolutional network + convolutional regression network
+	1. pretrain fully convolutional using sunnybrook dataset
+	2. fine tune using kaggle dataset
+- refine cost function (same as the one used in kaggle = discretised pdf + l2 norm (mse) )
+
+Data augmentation
+
+- resize images and targets accordingly
+- rotate images
