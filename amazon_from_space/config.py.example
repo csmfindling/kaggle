@@ -1,0 +1,3 @@
+basepath = './data/'
+
+path_csv = basepath + 'train.csv'
