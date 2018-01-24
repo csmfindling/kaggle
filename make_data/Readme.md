@@ -1,0 +1,37 @@
+variables : 
+
+ - id
+ - annee naissance
+ - annee_permis
+ - marque: categorical
+ - puis_fiscale: ordinal
+ - anc_veh: interval
+ - codepostal: categorical
+ - energie_veh: categorical
+ - kmage_annuel: interval
+ - crm: interval [0 - 100]? pas entre [0-100] plutot [50-150] ex ligne 1450 mais oui pour interval je pense
+ - profession: categorical
+ - var1: interval? ouai je pense
+ - var2: categorical
+ - var3: categorical
+ - var4: categorical
+ - var5: categorical
+ - var6: categorical
+ - var7: interval?
+ - var8: categorical
+ - var9: interval
+ - var10: interval
+ - var11: interval
+ - var12: interval
+ - var13: categorical?
+ - var14: categorical [A - N]
+ - var15: categorical
+ - var16: categorical
+ - var17: categorical
+ - var18: interval
+ - var19: categorical
+ - var20: categorical
+ - var21: categorical
+ - var22: categorical
+ - prime_tot_ttc
+
