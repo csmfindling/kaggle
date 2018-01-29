@@ -1,3 +1,14 @@
+## Kaggle competition
+Planet: Understanding the Amazon from Space : https://www.kaggle.com/c/planet-understanding-the-amazon-from-space
+
+## Goal 
+
+Predict a list of tags which you believe are associated with the image
+
+## Model
+
+We implemented vgg and resnet neural network architectures
+
 ## Setup
 
  1. Download the data from Kaggle
