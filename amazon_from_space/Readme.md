@@ -10,7 +10,9 @@ Predict a list of tags which you believe are associated with the image
 We implemented vgg and resnet neural network architectures
 
 K. Simonyan and A. Zisserman <a href="https://arxiv.org/pdf/1409.1556.pdf" class="underline"> Very Deep Convolutional Networks for Large-Scale Image Recognition </a> \
-Kaiming He, Xiangyu Zhang, Shaoqing Ren, Jian Sun, Deep Residual Learning for Image Recognition
+Kaiming He, Xiangyu Zhang, Shaoqing Ren, Jian Sun   <a href="https://arxiv.org/pdf/1512.03385.pdf" class="underline"> Deep Residual Learning for Image Recognition </a>
+
+
 
 ## Setup
 
