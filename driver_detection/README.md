@@ -1,3 +1,13 @@
+## Kaggle competition : 
+https://www.kaggle.com/c/state-farm-distracted-driver-detection
+
+## Goal :
+
+Predict the state of the driver
+
+## Model
+
+The model is based on vgg like networks
 
 ## Script informations : 
 
