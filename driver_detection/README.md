@@ -10,7 +10,7 @@ Predict the state of the driver
 
 The model is based on vgg like networks
 
-K. Simonyan and A. Zisserman Very Deep Convolutional Networks for Large-Scale Image Recognition 
+K. Simonyan and A. Zisserman <a href="https://arxiv.org/pdf/1409.1556.pdf" class="underline"> Very Deep Convolutional Networks for Large-Scale Image Recognition </a> \
 
 ## Script informations : 
 
