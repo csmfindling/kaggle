@@ -3,7 +3,7 @@ Planet: Understanding the Amazon from Space : https://www.kaggle.com/c/planet-un
 
 ## Goal 
 
-Predict a list of tags which you believe are associated with the image
+Predict a list of tags associated with the image
 
 ## Model
 
